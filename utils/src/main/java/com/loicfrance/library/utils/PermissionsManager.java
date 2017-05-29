@@ -15,8 +15,11 @@ import java.util.List;
 
 /**
  * Created by Loic France on 01/10/2016.
+ *
+ * simple class with static methods to easily request permissions
  */
 
+@SuppressWarnings("WeakerAccess") //remove "access can be private" warning
 public final class PermissionsManager {
     /**
      *
