@@ -1,0 +1,10 @@
+com.loicfrance.library.database
+com.loicfrance.library.geometry2d
+com.loicfrance.library.hardware
+com.loicfrance.library.hierarchy
+com.loicfrance.library.network
+com.loicfrance.library.network.bluetooth
+com.loicfrance.library.network.tcp
+com.loicfrance.library.parsers
+com.loicfrance.library.utils
+com.loicfrance.library.views
