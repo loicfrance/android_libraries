@@ -5,7 +5,7 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 
 /**
- * Created by rfrance on 21/11/2015.
+ * Created by Loic France on 21/11/2015.
  */
 public class Circle extends Shape {
     private float radius;
