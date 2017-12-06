@@ -1,5 +1,6 @@
 package com.loicfrance.library.hardware;
 
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.KeyguardManager;
@@ -15,18 +16,24 @@ import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.Vibrator;
 import android.provider.Settings;
+import android.support.annotation.RequiresPermission;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
 
 import com.loicfrance.library.utils.LogD;
 
+import java.net.NetworkInterface;
+import java.util.Collections;
+import java.util.List;
+
 
 /**
  * Created by Loic France on 15/07/2015.
  */
+@SuppressWarnings("WeakerAccess") //remove "access can be private" warning
 public class HardwareManager {
-    public static enum SOUND_MODE {
+    public enum SOUND_MODE {
         SILENT(0), VIBRATE(1), NORMAL(2);
         private int n;
         SOUND_MODE(int n) { this.n = n; }
@@ -155,7 +162,7 @@ public class HardwareManager {
             return -1;
         }
     }
-
+    @RequiresPermission(Manifest.permission.VIBRATE)
     public static void vibrate(Context context, long millis) {
         Vibrator v = getVibrator(context);
         if (v != null) v.vibrate(millis);
@@ -185,11 +192,36 @@ public class HardwareManager {
      *                  ...
      * @return
      */
+    @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
     public static boolean canUseNetwork(Context context, int networkId) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         return cm != null && cm.getNetworkInfo(networkId) != null;
     }
+    public static String getMacAddress() {
+        try {
+            List<NetworkInterface> all = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface nif : all) {
+                if (!nif.getName().equalsIgnoreCase("wlan0")) continue;
 
+                byte[] macBytes = nif.getHardwareAddress();
+                if (macBytes == null) {
+                    return "";
+                }
+
+                StringBuilder res1 = new StringBuilder();
+                for (byte b : macBytes) {
+                    res1.append(String.format("%02X:",b));
+                }
+
+                if (res1.length() > 0) {
+                    res1.deleteCharAt(res1.length() - 1);
+                }
+                return res1.toString();
+            }
+        } catch (Exception ex) {
+        }
+        return "02:00:00:00:00:00";
+    }
 
     public enum Condition {
         HARD_SIM("hard:sim_card"),

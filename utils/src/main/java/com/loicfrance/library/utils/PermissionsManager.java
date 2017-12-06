@@ -1,6 +1,5 @@
 package com.loicfrance.library.utils;
 
-import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
@@ -28,8 +27,19 @@ public final class PermissionsManager {
      * @return true if the permission has been granted, false otherwise
      */
     public static boolean isPermissionGranted(Context context, @NonNull String permission) {
-        return ContextCompat.checkSelfPermission(context,
-                Manifest.permission.WRITE_CALENDAR) == PackageManager.PERMISSION_GRANTED;
+        return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    public static String[] getGrantedPermissions(Context context, @NonNull String[] permissions) {
+        List<String> granted = new ArrayList<>(permissions.length);
+        for (String permission : permissions) {
+            if (isPermissionGranted(context, permission)) {
+                granted.add(permission);
+            }
+        }
+        String[] result = new String[granted.size()];
+        granted.toArray(result);
+        return result;
     }
 
     /**

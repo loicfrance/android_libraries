@@ -2,9 +2,9 @@ package com.loicfrance.library.network.tcp;
 
 import android.os.Handler;
 
-import com.loicfrance.library.utils.LogD;
 import com.loicfrance.library.network.NetworkThread;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 
@@ -17,8 +17,8 @@ public class TCPClientNetworkThread extends NetworkThread {
     private int port;
     private Socket clientSocket;
 
-    public TCPClientNetworkThread(String IPAddress, int port, Handler inputHandler) {
-        super(inputHandler);
+    public TCPClientNetworkThread(String IPAddress, int port, Handler inputHandler, int requestId_offset) {
+        super(inputHandler, requestId_offset);
         this.IPAddress = IPAddress;
         this.port = port;
     }
@@ -26,18 +26,31 @@ public class TCPClientNetworkThread extends NetworkThread {
     @Override
     public void run() {
         try {
-            LogD.d("TCP_CLIENT", "building socket...");
             clientSocket = new Socket(InetAddress.getByName(IPAddress), port);
-            LogD.d("TCP_CLIENT", "socket build.");
         } catch (Exception e) {
-            LogD.e("TCP_CLIENT", "cannot build socket with IP address : " +
-                    IPAddress + " and port " + port + "");
+            //LogD.e("TCP_CLIENT", "cannot build socket with IP address : " + IPAddress + " and port " + port + "");
             e.printStackTrace();
             clientSocket = null;
         }
         if (clientSocket != null) {
-            init(clientSocket);
+            init();
             process();
+        }
+    }
+    protected void init() {
+        try {
+            //get the in and out streams
+            init(clientSocket.getInputStream(), clientSocket.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public void close() {
+        super.close();
+        try {
+            clientSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

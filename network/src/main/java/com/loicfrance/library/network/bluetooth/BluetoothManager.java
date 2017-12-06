@@ -9,8 +9,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.annotation.RequiresPermission;
 import android.view.Gravity;
 import android.view.View;
@@ -24,30 +27,47 @@ import android.widget.SimpleAdapter;
 
 import com.loicfrance.library.utils.BasicListener;
 import com.loicfrance.library.utils.LogD;
-import com.loicfrance.library.utils.ModifObject;
+import com.loicfrance.library.utils.ObjectContainer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by Loic France on 22/06/2015.
  */
+@SuppressWarnings("WeakerAccess") //remove "access can be private" warning
 public abstract class BluetoothManager {
     public static final int STATE_ON = BluetoothAdapter.STATE_ON;
     public static final int STATE_OFF = BluetoothAdapter.STATE_OFF;
     public static final int STATE_TURNING_ON = BluetoothAdapter.STATE_TURNING_ON;
     public static final int STATE_TURNING_OFF = BluetoothAdapter.STATE_TURNING_OFF;
 
-    private static final int REQUEST_ENABLE_BT = 1786802;   //random number constant to all msg
-                                                            //IDs in package,  + specific id
     public static BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
     private static BroadcastReceiver deviceDiscoveryReceiver;
+    private static BluetoothAdapter.LeScanCallback deviceDiscoveryLeCallback;
     private static boolean isDeviceDiscovering = false;
 
 
 //__________________________________________________________________________________________________bluetooth state
 //--------------------------------------------------------------------------------------------------3
+
+    /**
+     * @param ctx application context
+     * @return {@code true} if the device has a Bluetooth adapter
+     */
+    public static boolean isAvailable(Context ctx) {
+        return ctx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH);
+    }
+    /**
+     * @param ctx application context
+     * @return {@code true} if the device has a Bluetooth Low Energy (BLE) adapter
+     */
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+    public static boolean isBLEAvailable(Context ctx) {
+        return ctx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
+    }
 
     /**
      * @return {@code true} if the bluetooth of the device is currently activated, {@code false}
@@ -58,6 +78,7 @@ public abstract class BluetoothManager {
         return bluetooth.isEnabled();
     }
 
+
     /**
      * Activates the bluetooth of the device
      * @param context application context used to launch the intent
@@ -65,10 +86,10 @@ public abstract class BluetoothManager {
      *              the bluetooth will be activated without him being notified
      */
     @RequiresPermission(Manifest.permission.BLUETOOTH_ADMIN)
-    public static void enable(Activity context, boolean ask) {
+    public static void enable(Activity context, boolean ask, int requestId) {
         if (ask) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            context.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            context.startActivityForResult(enableBtIntent, requestId);
         } else {
             bluetooth.enable();
         }
@@ -127,6 +148,7 @@ public abstract class BluetoothManager {
 //__________________________________________________________________________________________________device discovery
 //--------------------------------------------------------------------------------------------------1
 
+
     /**
      * Starts discovering the surrounding devices. If you already started a discovering,
      * this function will do nothing.
@@ -141,10 +163,10 @@ public abstract class BluetoothManager {
      * You can also stop the discovery by calling the{@link #cancelDiscovery(Context)} method.
      * Be aware that doing so, the listener's {@link DeviceDiscoveryListener#discoveryFinished()}
      * method will not be called.
-     * @param context
-     * @param time timeout, in milliseconds. the dicovery is cancelled when thi time has passed
+     * @param context the context from which the discovery is done
      * @param listener will be called when a new device is discovered,
      *                 or when the timeout is reached
+     * @param time timeout, in milliseconds. the discovery is cancelled when this time has passed
      */
     @RequiresPermission(Manifest.permission.BLUETOOTH_ADMIN)
     public static void startDiscovery(final Context context, long time,
@@ -153,6 +175,8 @@ public abstract class BluetoothManager {
             return; // Don't do several discoveries in the same time.
         }
         Handler receiverCleaner = new Handler();
+
+
         deviceDiscoveryReceiver = new BroadcastReceiver() {
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
@@ -167,17 +191,81 @@ public abstract class BluetoothManager {
         // Register the BroadcastReceiver
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         context.registerReceiver(deviceDiscoveryReceiver, filter);
-
         if (!bluetooth.startDiscovery()) listener.discoveryFinished();
         isDeviceDiscovering = true;
+
 
         // Unregister the BroadcastReceiver at the end of the time.
         receiverCleaner.postDelayed(new Runnable() {
             @Override
             @RequiresPermission(Manifest.permission.BLUETOOTH_ADMIN)
             public void run() {
-                cancelDiscovery(context);
-                listener.discoveryFinished();
+                if(isDeviceDiscovering) {
+                    cancelDiscovery(context);
+                    listener.discoveryFinished();
+                }
+            }
+        }, time);
+    }
+    /**
+     * Starts discovering the surrounding devices. If you already started a discovering,
+     * this function will do nothing.
+     * <br/>
+     * When a device is discovered, the listener's
+     * {@link DeviceDiscoveryListener#deviceDiscovered(BluetoothDevice)} function is called
+     * with the discovered device as the parameter.
+     * <br/>
+     * When the timeout period has been reached, the discovery is cancelled and the listener's
+     * {@link DeviceDiscoveryListener#discoveryFinished()} function is called.
+     * <br/>
+     * You can also stop the discovery by calling the{@link #cancelLeDiscovery()} method.
+     * Be aware that doing so, the listener's {@link DeviceDiscoveryListener#discoveryFinished()}
+     * method will not be called.
+     * @param context the context from which the discovery is done
+     * @param listener will be called when a new device is discovered,
+     *                 or when the timeout is reached
+     * @param time timeout, in milliseconds. the dicovery is cancelled when thi time has passed
+     * @param uuidFilter the uuid of specific types of peripherals if you want to filter them.
+     *                  {@code null} for no filter.
+     */
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+    @RequiresPermission(Manifest.permission.BLUETOOTH_ADMIN)
+    public static void startLeDiscovery(final Activity context, final DeviceDiscoveryListener listener,
+                                        long time, @Nullable UUID[] uuidFilter) {
+        if (isDeviceDiscovering) {
+            return; // Don't do several discoveries in the same time.
+        }
+        final Handler h = new Handler();
+        deviceDiscoveryLeCallback = new BluetoothAdapter.LeScanCallback() {
+            @Override
+            public void onLeScan(final BluetoothDevice bluetoothDevice,
+                                 int rssi, byte[] scanRecord) {
+                h.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        listener.deviceDiscovered(bluetoothDevice);
+                    }
+                });
+            }
+        };
+        if(uuidFilter == null || uuidFilter.length == 0)
+            bluetooth.startLeScan(deviceDiscoveryLeCallback);
+        else
+            bluetooth.startLeScan(uuidFilter, deviceDiscoveryLeCallback);
+
+        isDeviceDiscovering = true;
+
+
+        // Unregister the BroadcastReceiver at the end of the time.
+        Handler receiverCleaner = new Handler();
+        receiverCleaner.postDelayed(new Runnable() {
+            @Override
+            @RequiresPermission(Manifest.permission.BLUETOOTH_ADMIN)
+            public void run() {
+                if(isDeviceDiscovering) {
+                    cancelLeDiscovery();
+                    listener.discoveryFinished();
+                }
             }
         }, time);
     }
@@ -190,8 +278,24 @@ public abstract class BluetoothManager {
     @RequiresPermission(Manifest.permission.BLUETOOTH_ADMIN)
     public static void cancelDiscovery(Context context) {
         bluetooth.cancelDiscovery();
-        context.unregisterReceiver(deviceDiscoveryReceiver);
-        isDeviceDiscovering = false;
+        if(isDeviceDiscovering && deviceDiscoveryReceiver != null) {
+            context.unregisterReceiver(deviceDiscoveryReceiver);
+            deviceDiscoveryReceiver = null;
+            isDeviceDiscovering = false;
+        }
+    }
+    /**
+     * Cancels the device discovery. Do not forget to call this function when you don't
+     * need the discovery to be running, because device discovering costs a lot of energy
+     */
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+    @RequiresPermission(Manifest.permission.BLUETOOTH_ADMIN)
+    public static void cancelLeDiscovery() {
+        if(deviceDiscoveryLeCallback != null) {
+            bluetooth.stopLeScan(deviceDiscoveryLeCallback);
+            deviceDiscoveryLeCallback = null;
+            isDeviceDiscovering = false;
+        }
     }
 
 //__________________________________________________________________________________________________choose device
@@ -205,15 +309,16 @@ public abstract class BluetoothManager {
      * @param title dialog box title
      * @param listener will be called when the user has made his choice.
      * @param requestTag tag that will be used when calling the listener
+     * @param enableRequestId id that will be used to request bluetooth enable if not previously enabled
      */
     @RequiresPermission(allOf = {Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH})
     public static void chooseDevice(final Activity context, @Nullable String title,
                                     final BasicListener<BluetoothDevice> listener,
-                                    final int requestTag) {
+                                    final int requestTag, int enableRequestId) {
 
-        if (!isEnabled()) enable(context, true);
+        if (!isEnabled()) enable(context, true, enableRequestId);
 
-        final ModifObject<Integer> tmp = new ModifObject<>(0);
+        final ObjectContainer<Integer> tmp = new ObjectContainer<>(0);
 
         //- - - - - - - - - - - - - - - - - - - - setting up the view.
 
@@ -267,7 +372,7 @@ public abstract class BluetoothManager {
             @RequiresPermission(Manifest.permission.BLUETOOTH_ADMIN)
             public void onClick(View v) {
                 LogD.d("BT_MANAGER", "device selection accepted");
-                listener.onCall(requestTag, devices.get((int) tmp.get()));
+                listener.onCall(requestTag, devices.get(tmp.get()));
                 bluetooth.cancelDiscovery();
                 dialog.dismiss();
             }
@@ -324,8 +429,9 @@ public abstract class BluetoothManager {
      */
     @RequiresPermission(Manifest.permission.BLUETOOTH_ADMIN)
     public void cleanUp(Activity context) {
-        if (isDeviceDiscovering) {
-            cancelDiscovery(context);
+        cancelDiscovery(context);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            cancelLeDiscovery();
         }
     }
 

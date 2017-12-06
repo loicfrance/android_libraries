@@ -15,12 +15,10 @@ public class NetworkHandler {
     private boolean continuousMode;
     private byte[] buffer;
     private Handler senderHandler;
-    private int requestCode = 1786803;  //random number constant to all msg
-                                        //IDs in package,  + specific id
     private final Handler.Callback hcb = new Handler.Callback() {
         @Override
         public boolean handleMessage(Message msg) {
-            if(msg.what == NetworkThread.MSG_DATA)
+            if(msg.what == thread.requestId_DATA)
                 listener.onInput((byte[]) msg.obj);
             return true;
         }
@@ -29,7 +27,7 @@ public class NetworkHandler {
 
     public NetworkHandler(boolean continuousMode) {
         this.continuousMode = continuousMode;
-        this.continuousMode_delay = 20; // ms
+        this.continuousMode_delay = 20; // 20 ms <=> 50 Hz
     }
     public NetworkHandler() {
         this(false);
@@ -65,7 +63,7 @@ public class NetworkHandler {
      * Otherwise, the buffer will be sent on the next scheduled time.
      * use {@link #enableContinuousMode(int)} or {@link #enableContinuousMode()} <!--
      * -->to enable continuous mode, {@link #disableContinuousMode()} to disable it, or <!--
-     * -->{@link #isContinuouslyModeEnabled()} to know it it is enabled or not.
+     * -->{@link #isContinuousModeEnabled()} to know it it is enabled or not.
      * If  continuous mode is enabled, you can use
      * @param buffer the byte array to be sent
      */
@@ -107,7 +105,7 @@ public class NetworkHandler {
         continuousMode = false;
     }
 
-    public boolean isContinuouslyModeEnabled() {
+    public boolean isContinuousModeEnabled() {
         return continuousMode;
     }
 
