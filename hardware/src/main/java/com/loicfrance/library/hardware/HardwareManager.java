@@ -17,6 +17,7 @@ import android.os.Build;
 import android.os.Vibrator;
 import android.provider.Settings;
 import android.support.annotation.RequiresPermission;
+import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
@@ -186,11 +187,10 @@ public class HardwareManager {
     /**
      *
      * @param networkId one of
-     *                  {@code #ConnectivityManager.TYPE_MOBILE},
-     *                  {@code ConnectivityManager.TYPE_WIFI},
-     *                  {@code ConnectivityManager.TYPE_BLUETOOTH},
+     *                  {@link ConnectivityManager#TYPE_MOBILE},
+     *                  {@link ConnectivityManager#TYPE_WIFI},
+     *                  {@link ConnectivityManager#TYPE_BLUETOOTH},
      *                  ...
-     * @return
      */
     @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
     public static boolean canUseNetwork(Context context, int networkId) {
@@ -218,18 +218,25 @@ public class HardwareManager {
                 }
                 return res1.toString();
             }
-        } catch (Exception ex) {
+        } catch (Exception ignored) {
         }
         return "02:00:00:00:00:00";
     }
 
     public enum Condition {
+
         HARD_SIM("hard:sim_card"),
+
         HARD_VIBRATE("hard:vibrate"),
+
         HARD_CAMERA("hard:camera"),
+
         HARD_FLASHLIGHT("hard:flashLight"),
+
         SOFT_PLANE("soft:plane"),
+
         SOFT_PORT_LAND_SWITCH("soft:orient_switch");
+
         String name;
         Condition(String name) {
             this.name = name;
@@ -239,11 +246,12 @@ public class HardwareManager {
                 if(cond.name.equals(name)) return cond;
             return null;
         }
-        public static boolean verify(Context context, Condition condition) {
+        public static boolean verify(Context context, @RequiresPermission Condition condition) {
             if(condition == null) return true;
             switch (condition) {
                 case HARD_SIM:
-                    return canUseNetwork(context, ConnectivityManager.TYPE_MOBILE);
+                    TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);  //gets the current TelephonyManager
+                    return !(tm.getSimState() == TelephonyManager.SIM_STATE_ABSENT);
                 case HARD_VIBRATE:
                     return canVibrate(context);
                 case HARD_CAMERA:
