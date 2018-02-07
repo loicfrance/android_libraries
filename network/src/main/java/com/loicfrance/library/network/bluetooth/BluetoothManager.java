@@ -44,12 +44,16 @@ public abstract class BluetoothManager {
     public static final int STATE_TURNING_ON = BluetoothAdapter.STATE_TURNING_ON;
     public static final int STATE_TURNING_OFF = BluetoothAdapter.STATE_TURNING_OFF;
 
-    public static BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
+
+    private static BluetoothAdapter bluetooth = BluetoothAdapter.getDefaultAdapter();
     private static BroadcastReceiver deviceDiscoveryReceiver;
     private static BluetoothAdapter.LeScanCallback deviceDiscoveryLeCallback;
     private static boolean isDeviceDiscovering = false;
 
 
+    public static BluetoothAdapter getAdapter() {
+        return bluetooth;
+    }
 //__________________________________________________________________________________________________bluetooth state
 //--------------------------------------------------------------------------------------------------3
 
@@ -169,8 +173,8 @@ public abstract class BluetoothManager {
      * @param time timeout, in milliseconds. the discovery is cancelled when this time has passed
      */
     @RequiresPermission(Manifest.permission.BLUETOOTH_ADMIN)
-    public static void startDiscovery(final Context context, long time,
-                                      final DeviceDiscoveryListener listener) {
+    public static void startDiscovery(final Context context,
+                                      final DeviceDiscoveryListener listener, long time) {
         if (isDeviceDiscovering) {
             return; // Don't do several discoveries in the same time.
         }
@@ -393,7 +397,7 @@ public abstract class BluetoothManager {
         });
 
         //- - - - - - - - - - - - - - - - - - - - starting device discovery.
-        startDiscovery(context, 12000, new DeviceDiscoveryListener() {
+        startDiscovery(context, new DeviceDiscoveryListener() {
             @Override
             public void deviceDiscovered(BluetoothDevice device) {
                 LogD.d("BT_MANAGER", "found new device : " +
@@ -414,7 +418,7 @@ public abstract class BluetoothManager {
             public void discoveryFinished() {
 
             }
-        });
+        }, 12000);
 
     }
 

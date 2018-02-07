@@ -95,13 +95,13 @@ public abstract class AbstractDatabase extends SQLiteOpenHelper {
     public static String SQLCreateTableCommand(String tableName, String[] data) {
         if(data.length%2 ==1) throw new IllegalArgumentException("second argument (String[] data)" +
                 " must be of size 2. see javadoc for more information");
-        String result = "CREATE TABLE " + tableName + '(';
+        StringBuilder result = new StringBuilder("CREATE TABLE " + tableName + '(');
         for(int i=0; i< data.length/2; i++) {
-            if(i>0) result += ", ";
-            result += data[2*i] + ' ' + data[2*i+1];
+            if(i>0) result.append(", ");
+            result.append(data[2 * i]).append(' ').append(data[2 * i + 1]);
         }
 
-        return result + ");";
+        return result.append(");").toString();
     }
 
 //##################################################################################################
