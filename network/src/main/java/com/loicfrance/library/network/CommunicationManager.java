@@ -71,7 +71,7 @@ public abstract class CommunicationManager {
     }
 
     public void write(byte[] bytes) {
-        networkHandler.obtainMessage(MSG_DATA, bytes);
+        networkHandler.obtainMessage(MSG_DATA, bytes).sendToTarget();
     }
     public void stop(boolean safeQuit) {
         if(safeQuit && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
