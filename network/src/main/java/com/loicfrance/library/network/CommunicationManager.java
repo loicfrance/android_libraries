@@ -80,19 +80,29 @@ public abstract class CommunicationManager {
         this.running = false;
         listener.onCommEnd(this);
     }
+    public final void stop() {
+        stop(true);
+    }
 
 
     protected void onInputData(byte[] data) {
         localHandler.obtainMessage(MSG_DATA, data).sendToTarget();
     }
+    protected boolean onLocalInputData(int what, Object obj) {
+        switch(what) {
+            case MSG_DATA:
+                CommunicationManager cm = CommunicationManager.this;
+                cm.listener.onData(cm, (byte[]) obj);
+                return true;
+            default : return false;
+        }
+    }
     protected abstract void onOutputData(byte[] bytes);
 
     public boolean isRunning() { return this.running; }
-    protected CommunicationListener getListener() {
+
+
+    public CommunicationListener getCommunicationListener() {
         return this.listener;
     }
-    public void setListener(@NonNull CommunicationListener listener) {
-        this.listener = listener;
-    }
-
 }
