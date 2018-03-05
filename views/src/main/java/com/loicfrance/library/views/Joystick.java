@@ -6,9 +6,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.ArcShape;
-import android.graphics.drawable.shapes.RectShape;
 import android.support.annotation.FloatRange;
-import android.support.annotation.IntRange;
 import android.support.annotation.Nullable;
 import android.view.MotionEvent;
 import android.view.View;
@@ -202,22 +200,21 @@ public class Joystick extends View {
         }
         //if a modification occurred, update
         if(thumbX != x || thumbY != y) {
-            //ask listener before coordinates modifications if listener exists
-            if(listener == null || listener.onMove(this, x, y)) {
-                //modify coordinates
-                thumbX = x;
-                thumbY = y;
-                //refresh view
-                Rect rect = thumb.copyBounds();
-                float centerX = (rect.left + rect.right)/2f;
-                float centerY = (rect.top + rect.bottom)/2f;
-                //calculate refresh rectangle
-                Rect rect2 = new Rect(rect);
-                rect.inset((int)(x - centerX), (int)(y - centerY));
-                rect2.union(rect);
-                thumb.setBounds(rect);
-                invalidate(rect2);
-            }
+            //modify coordinates
+            thumbX = x;
+            thumbY = y;
+            //refresh view
+            Rect rect = thumb.copyBounds();
+            float centerX = (rect.left + rect.right)/2f;
+            float centerY = (rect.top + rect.bottom)/2f;
+            //calculate refresh rectangle
+            Rect rect2 = new Rect(rect);
+            rect.inset((int)(x - centerX), (int)(y - centerY));
+            rect2.union(rect);
+            thumb.setBounds(rect);
+            invalidate(rect2);
+            //notify listener
+            if(listener != null) listener.onMove(this, x, y);
         }
     }
 
