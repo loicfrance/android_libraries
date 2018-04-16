@@ -1,9 +1,13 @@
 package com.loicfrance.library.utils;
 
 import android.content.Context;
-import android.text.Layout;
+import android.support.annotation.IntDef;
 import android.util.Log;
 import android.widget.Toast;
+
+import java.lang.annotation.Retention;
+
+import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 
 /**
@@ -14,6 +18,7 @@ import android.widget.Toast;
  */
 public final class LogD {
     private static boolean debug = false;
+    private static int toastDuration = Toast.LENGTH_SHORT;
     /**
      * a call to this function is only necessary in debug mode (default: non debug).
      * @param debug should be equal to {@code BuildConfig.DEBUG}.
@@ -30,5 +35,15 @@ public final class LogD {
     public static void toast(Context context, String msg, boolean duration_long) {
         if(debug) Toast.makeText(context, msg, (duration_long? Toast.LENGTH_LONG : Toast.LENGTH_SHORT)).show();
     }
+    public static void toast(Context context, String msg) {
+        if(debug) Toast.makeText(context, msg, toastDuration).show();
+    }
     public static boolean isDebugging() { return debug; }
+
+    @Retention(SOURCE)
+    @IntDef({Toast.LENGTH_LONG, Toast.LENGTH_SHORT})
+    private @interface TOAST_LENGTH {}
+    public static void setToastDefaultDuration(@TOAST_LENGTH int duration) {
+        toastDuration = duration;
+    }
 }

@@ -13,7 +13,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Size;
 
 /**
- * Created by RichardFrance on 28/02/2018.
+ * Created by Loic France on 28/02/2018.
  */
 
 public abstract class DatabaseHandler extends SQLiteOpenHelper {
@@ -55,6 +55,7 @@ public abstract class DatabaseHandler extends SQLiteOpenHelper {
      *              (optionally) " AUTOINCREMENT".
      * @return the SQL command you can use to create the TABLE.
      */
+    @NonNull
     public static String SQLCreateTableCommand(String tableName, String[] data) {
         if(data.length%2 ==1) throw new IllegalArgumentException("second argument (String[] data)" +
                 " must be of size 2. see javadoc for more information");
@@ -67,21 +68,26 @@ public abstract class DatabaseHandler extends SQLiteOpenHelper {
         return result.append(");").toString();
     }
 
+    @NonNull
     public static String SQLDropTablesCommand(@NonNull @Size(min = 1) String[] tableNames) {
-        StringBuilder result = new StringBuilder("DROP TABLE IF EXISTS ");
-        for(int i=0; i< tableNames.length; i++) {
-            if(i>0) result.append(", ");
-            result.append(tableNames[i]);
+        StringBuilder result = new StringBuilder();
+        for (String tableName : tableNames) {
+            result.append("DROP TABLE IF EXISTS ")
+                  .append(tableName)
+                  .append(";");
         }
-        return  result.append(" CASCADE;").toString();
+        return  result.toString();
     }
 
-    abstract public String getTablesSQLSchema();
+    abstract public String[] getTablesSQLSchema();
     abstract public String getDropTablesCommand();
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
-        this.getWritableDatabase().execSQL(getTablesSQLSchema());
+        String[] commands = getTablesSQLSchema();
+        for (String cmd : commands) {
+            sqLiteDatabase.execSQL(cmd);
+        }
     }
 
     @Override
@@ -97,13 +103,21 @@ public abstract class DatabaseHandler extends SQLiteOpenHelper {
     }
 
     /**
-     * execute a SQL statement that is neither SELECT, INSERT, UPDATE or DELETE
+     * execute a SQL statement that is neither SELECT, INSERT, UPDATE or DELETE.
      * @see SQLiteDatabase#execSQL(String) SQLiteDatabase.execSQL(String)
      * @param sqlCommand the command to execute
      */
     protected void execSQL(String sqlCommand) {
         this.getWritableDatabase().execSQL(sqlCommand);
     }
+
+    /**
+     * execute a SQL statement that is neither SELECT, INSERT, UPDATE or DELETE.
+     * @see #execSQL(String)
+     * @see SQLiteDatabase#execSQL(String, Object[])
+     * @param sqlCommand the command to execute
+     * @param bindArgs the arguments which will replace the '?' in the statement
+     */
     protected void execSQL(String sqlCommand, String[] bindArgs){
         this.getWritableDatabase().execSQL(sqlCommand, bindArgs);
     }

@@ -233,7 +233,10 @@ public abstract class BluetoothManager {
      *                  {@code null} for no filter.
      */
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
-    @RequiresPermission(Manifest.permission.BLUETOOTH_ADMIN)
+    @RequiresPermission( allOf = {
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.BLUETOOTH_ADMIN
+    })
     public static void startLeDiscovery(final Activity context, final DeviceDiscoveryListener listener,
                                         long time, @Nullable UUID[] uuidFilter) {
         if (isDeviceDiscovering) {
@@ -272,6 +275,33 @@ public abstract class BluetoothManager {
                 }
             }
         }, time);
+    }/**
+     * Starts discovering the surrounding devices. If you already started a discovering,
+     * this function will do nothing.
+     * <br/>
+     * When a device is discovered, the listener's
+     * {@link DeviceDiscoveryListener#deviceDiscovered(BluetoothDevice)} function is called
+     * with the discovered device as the parameter.
+     * <br/>
+     * When the timeout period has been reached, the discovery is cancelled and the listener's
+     * {@link DeviceDiscoveryListener#discoveryFinished()} function is called.
+     * <br/>
+     * You can also stop the discovery by calling the{@link #cancelLeDiscovery()} method.
+     * Be aware that doing so, the listener's {@link DeviceDiscoveryListener#discoveryFinished()}
+     * method will not be called.
+     * @param context the context from which the discovery is done
+     * @param listener will be called when a new device is discovered,
+     *                 or when the timeout is reached
+     * @param time timeout, in milliseconds. the dicovery is cancelled when thi time has passed
+     */
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+    @RequiresPermission( allOf = {
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.BLUETOOTH_ADMIN
+    })
+    public void startLeDiscovery(final Activity context, final DeviceDiscoveryListener listener,
+                                 long time) {
+        startLeDiscovery(context, listener, time, null);
     }
 
     /**

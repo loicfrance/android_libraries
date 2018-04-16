@@ -3,12 +3,22 @@ package com.loicfrance.library.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 
 /**
  * Created by Loic France on 23/09/2015.
- * the pseudo-interface class to use with Settings.
- * Inside, put all of your preference keys as String constants.
- *
+ * <br/><br/>
+ * An abstract class needed to use the {@link Settings} class
+ * Inside, put all of your preference keys as String constants, and fill the methods to return
+ * the needed information for each preference : its type (
+ * {@link Settings.TYPE#BOOLEAN}, {@link Settings.TYPE#INT}, {@link Settings.TYPE#FLOAT},
+ * {@link Settings.TYPE#LONG}, {@link Settings.TYPE#STRING}), and its default value.
+ *<br/><br/>
+ * You also have to provide an array containing all the preferences in a String array.
+ *<br/><br/>
+ * It is possible to override the method : {@link #getPreferences(Context)} which returns
+ * the default shared preferences, if you want to provide other preferences.
+ *<br/><br/>
  * Example :
  * <pre>{@code
 
@@ -63,9 +73,27 @@ public class MySettingsSet extends SettingsSet {
  * </pre>
  */
 public abstract class SettingsSet {
-    public abstract Settings.TYPE getType(String pref);
-    public abstract Object getDefault(String pref);
-    public abstract String[] getAllKeysArray();
+    /**
+     * @param pref the preference the type is needed for
+     * @return the type of the specified preference, one of the {@link Settings.TYPE} enum constants.
+     */
+    public abstract @NonNull Settings.TYPE getType(@NonNull String pref);
+
+    /**
+     * @param pref the prefrence the default value is needed for
+     * @return the default value for the specified preference
+     */
+    public abstract Object getDefault(@NonNull String pref);
+
+    /**
+     * @return an array containing all the preferences names
+     */
+    public abstract @NonNull String[] getAllKeysArray();
+
+    /**
+     * @param context the context of the application
+     * @return the {@link SharedPreferences} instance to be used by the application.
+     */
     public SharedPreferences getPreferences(Context context) {
         return PreferenceManager.getDefaultSharedPreferences(context);
     }

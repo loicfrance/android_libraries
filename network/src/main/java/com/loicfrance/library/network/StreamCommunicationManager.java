@@ -1,5 +1,6 @@
 package com.loicfrance.library.network;
 
+import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 
 import java.io.DataInputStream;
@@ -99,22 +100,23 @@ public class StreamCommunicationManager extends CommunicationManager {
     }
 
     protected byte[] readData() {
-        int len = 0;
+        int len = 0, l;
         byte[] buffer = new byte[this.inputMaxSize];
         try {
             do {
-                len += in.read(buffer, len, this.inputMaxSize-len);
+                l = in.read(buffer, len, this.inputMaxSize-len);
                 //LogD.i(LOGTAG, "read " + len +" bytes from input stream.");
-                if (len < 0) {
-                    //LogD.e(LOGTAG, "Message Length Error : length = " + len);
-                    return null;
-                }
-            } while(len > 0 && len < this.inputMaxSize && in.available() > 0);
+                len += l;
+            } while(l > 0 && 0 < len && len < this.inputMaxSize && in.available() > 0);
         } catch (Exception e) {
             //LogD.e(LOGTAG, "Error reading data : ");
             e.printStackTrace();
             return null;
         }
         return buffer;
+    }
+
+    public void setMaxInputSize(@IntRange(from=1)int max) {
+        this.inputMaxSize = max;
     }
 }

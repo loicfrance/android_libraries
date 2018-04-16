@@ -6,6 +6,7 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
 import android.webkit.WebView;
 
 import java.util.ArrayList;
@@ -77,6 +78,12 @@ public class JSExecutor {
         } else {
             this.webView.loadUrl("javascript:" + script);
         }
+        webView.getSettings().setJavaScriptEnabled(true);
+    }
+    @SuppressLint("SetJavaScriptEnabled")
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    public void eval(String script, ValueCallback<String> onResult) {
+        this.webView.evaluateJavascript(script, onResult);
         webView.getSettings().setJavaScriptEnabled(true);
     }
 
