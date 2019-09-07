@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 RichardFrance
+ * Copyright 2018 Loic France
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -37,7 +37,8 @@ public class SettingViewsHelper {
         cb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                Settings.set(preference, isChecked);
+                if(Settings.getBool(preference) != isChecked)
+                    Settings.set(preference, isChecked);
             }
         });
     }
@@ -46,12 +47,14 @@ public class SettingViewsHelper {
         sb.setProgress(Settings.getInt(preference));
         sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar sb, int progress, boolean fromUser) {
-                if (!changeOnRelease) Settings.set(preference, progress);
+                if (!changeOnRelease && (Settings.getInt(preference) != progress))
+                    Settings.set(preference, progress);
             }
             @Override public void onStartTrackingTouch(SeekBar seekBar) { }
             @Override public void onStopTrackingTouch(SeekBar seekBar) {
-                LogD.d("Settings Activity", "stop moving seekbar");
-                if (changeOnRelease) Settings.set(preference, seekBar.getProgress());
+                int progress = seekBar.getProgress();
+                if (changeOnRelease && (Settings.getInt(preference) != progress))
+                    Settings.set(preference, progress);
             }
         });
     }
@@ -75,7 +78,8 @@ public class SettingViewsHelper {
                         case STRING : value = s.toString(); break;
                         case LONG   : value = Long.parseLong(s.toString()); break;
                     }
-                    if(value != null) Settings.set(preference, value);
+                    if(value != null && !Settings.get(preference).equals(value))
+                        Settings.set(preference, value);
                 } catch (NumberFormatException ignored) { }
             }
         });
